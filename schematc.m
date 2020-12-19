@@ -139,8 +139,8 @@ axis off;
 
 
 for sgn_idx = 1:2,
-for rdx = 1:2,
-for sdx = 1:2,
+for rdx = 1:2, % slow/fast, rate
+for sdx = 1:2, % coarse/fine, scale
 	LF = .4 + sgn_sel(sgn_idx)*((rdx-1)*.22 + .11);
 	BT = .35 + (sdx-1) * .175;
 
@@ -162,6 +162,7 @@ for sdx = 1:2,
 	r = r(fdx, tdx);
 
 	sub_f = axes('position', [LF, BT+HG, WD/4, HG/2]);
+	% plot the filter in the time domain
 	image(cplx_col(real(r))); axis xy;
 	%image(cplx_col(r)'); axis xy;
 	[R1, R2] = size(r);
@@ -175,6 +176,7 @@ for sdx = 1:2,
 	set(gca, 'xtick', [], 'ytick', [], 'box', 'on');
 
 	sub_c = axes('position', [LF, BT, WD, HG]);
+	% plots the signal
 	z = cor_pick(FCORNAME, 3-sgn_idx, r_sel(rdx), s_sel(sdx));
 	image(cplx_col(z, mean(y(:))/4)');  axis xy
 	set(gca, 'xtick', [], 'ytick', [], 'box', 'on');

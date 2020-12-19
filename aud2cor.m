@@ -114,7 +114,9 @@ ndx1 = ndx;
 ndx2 = [0 N+1 N+1 0 0];
 
 z  = zeros(N+2*dN, M+2*dM);
-cr = zeros(K2, K1*2, N+2*dN, M+2*dM);
+% cortical representation
+cr = zeros(K2, K1*2, N+2*dN, M+2*dM); % scales, 2*rates, samples, channels
+% rates are mirrored b/c of signs?
 
 for rdx = 1:K1,
     % rate filtering
@@ -132,72 +134,74 @@ for rdx = 1:K1,
             HR(N1+1) = abs(HR(N1+2));
         end;
         
-% % %         for sdx = 1:K2,
-% % %             % scale filtering
-% % %             fc_sc = sv(sdx);
-% % %             
-% % %             HS = gen_corf(fc_sc, M1, SRF, [sdx+BP K2+BP*2]);% if BP, all BPF
-% % %             % spatiotemporal response
-% % %             Z = (HR*HS') .* Y;
-% % %             % first inverse fft (w.r.t. time axis)
-% % %             for m = 1:M1,
-% % %                 R1 = ifft(Z(:, m));
-% % %                 z1(:, m) = R1(ndx1);
-% % %             end;	% z1: N+2*dN -by- M1
-% % %             
-% % %             % second inverse fft (w.r.t frequency axis)
-% % %             for n = ndx,
-% % %                 R1 = ifft(z1(n, :), M2);
-% % %                 z(n, :) = R1(mdx1);
-% % %             end;	% z: N+2*dN -by- M+2*dM
-% % %             % save file
-% % %             cr(sdx, rdx+(sgn==1)*K1, :, :) = z;
-% % %         end
-        
-        % The following code is equivalent to the commented out but more efficient since the first inverse fft is done out of the loop.
-        
-        % first inverse fft (w.r.t. time axis)
-        z1= zeros(N2,M1); 
-        for m = 1:M1, 
-            z1(:,m)= HR.*Y(:,m);
-        end;	
-        z1= ifft(z1);
-        z1= z1(ndx1,:);
-        
         for sdx = 1:K2,
             % scale filtering
             fc_sc = sv(sdx);
+            
             HS = gen_corf(fc_sc, M1, SRF, [sdx+BP K2+BP*2]);% if BP, all BPF
+            % spatiotemporal response
+            Z = (HR*HS') .* Y;
+            % first inverse fft (w.r.t. time axis)
+            for m = 1:M1,
+                R1 = ifft(Z(:, m));
+                z1(:, m) = R1(ndx1);
+            end;	% z1: N+2*dN -by- M1
             
             % second inverse fft (w.r.t frequency axis)
             for n = ndx,
-                R1 = ifft( (z1(n, :).*HS'), M2); 
+                R1 = ifft(z1(n, :), M2);
                 z(n, :) = R1(mdx1);
             end;	% z: N+2*dN -by- M+2*dM
             % save file
             cr(sdx, rdx+(sgn==1)*K1, :, :) = z;
-            if ~TMP, 
-                corcplxw(z, fout);
-            end
-            if DISP,
-                image(cplx_col(z, DISP)');
-                axis xy;
+        end
+        
+        % The following code is equivalent to the commented out but more efficient since the first inverse fft is done out of the loop.
+        
+        % % first inverse fft (w.r.t. time axis)
+        % z1= zeros(N2,M1); 
+        % for m = 1:M1, 
+        %     z1(:,m)= HR.*Y(:,m);
+        % end;	
+        % z1= ifft(z1);
+        % z1= z1(ndx1,:);
+        
+        % for sdx = 1:K2,
+        %     % scale filtering
+        %     fc_sc = sv(sdx);
+        %     HS = gen_corf(fc_sc, M1, SRF, [sdx+BP K2+BP*2]);% if BP, all BPF
+            
+        %     % second inverse fft (w.r.t frequency axis)
+        %     for n = ndx,
+        %         R1 = ifft( (z1(n, :).*HS'), M2); 
+        %         z(n, :) = R1(mdx1);
+        %     end;	% z: N+2*dN -by- M+2*dM
+        %     % save file
+        %     cr(sdx, rdx+(sgn==1)*K1, :, :) = z;
+        %     if ~TMP, 
+        %         corcplxw(z, fout);
+        %     end
+        %     if DISP,
+        %         image(cplx_col(z, DISP)');
+        %         axis xy;
                 
-                if FULLT | FULLX, hold on;
-                    plot(ndx2, mdx2, 'k--');
-                    hold off; end;
+        %         if FULLT | FULLX, hold on;
+        %             plot(ndx2, mdx2, 'k--');
+        %             hold off; end;
                 
-                text('position', [N/2+dN, .9*M+dM*2], ...
-                    'str', ['Scale = ' ...
-                        sprintf('%5.2f', fc_sc) ...
-                        ' cyc/oct, Rate = ' ...
-                        sprintf('%5.2f', sgn*fc_rt) ...
-                        ' Hz (Max. = ' ...
-                        num2str(max(max(abs(z)))) ')'], ...
-                    'ho', 'ce', 'fontwe', 'bold');
-                drawnow;
-            end;
-        end;
+        %         text('position', [N/2+dN, .9*M+dM*2], ...
+        %             'str', ['Scale = ' ...
+        %                 sprintf('%5.2f', fc_sc) ...
+        %                 ' cyc/oct, Rate = ' ...
+        %                 sprintf('%5.2f', sgn*fc_rt) ...
+        %                 ' Hz (Max. = ' ...
+        %                 num2str(max(max(abs(z)))) ')'], ...
+        %             'ho', 'ce', 'fontwe', 'bold');
+        %         drawnow;
+        %     end;
+        % end;
+
+
     end;
     time_est(rdx, K1, 1, t0); 
     
